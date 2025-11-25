@@ -70,7 +70,26 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
-        
+        momentum = self.price[assets].pct_change(self.lookback)
+
+        vol = self.returns[assets].rolling(self.lookback).std()
+
+        score = momentum / vol
+        score = score.replace([np.inf, -np.inf], 0).fillna(0)
+
+        for t in score.index:
+            s = score.loc[t]
+
+            s = s.clip(lower=0)
+
+            if s.sum() == 0:
+                w = np.zeros(len(assets))
+            else:
+                w = s / s.sum()
+
+            self.portfolio_weights.loc[t, assets] = w
+
+        self.portfolio_weights[self.exclude] = 0
         
         """
         TODO: Complete Task 4 Above
