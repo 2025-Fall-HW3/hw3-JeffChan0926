@@ -62,6 +62,10 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
+        n = len(assets)
+        w = 1.0/n
+        self.portfolio_weights[assets] = w
+        self.portfolio_weights[self.exclude] = 0
 
         """
         TODO: Complete Task 1 Above
@@ -113,7 +117,21 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
+        # 1. 全期間都用同一組波動率 (No rolling)
+        vol = df_returns[assets].std()      # Series
 
+        # 2. inverse volatility
+        inv_vol = 1.0 / vol
+
+        # 3. normalize → sum = 1
+        weights = inv_vol / inv_vol.sum()  # Series
+
+        # 4. 將同一組權重複製到整個時間序列
+        for col in assets:
+            self.portfolio_weights[col] = weights[col]
+
+        # 5. SPY 權重永遠 0
+        self.portfolio_weights[self.exclude] = 0
 
 
         """
@@ -187,11 +205,21 @@ class MeanVariancePortfolio:
                 """
                 TODO: Complete Task 3 Below
                 """
+                w = model.addMVar(n, lb=0.0, ub=1.0, name="w")
 
-                # Sample Code: Initialize Decision w and the Objective
-                # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+                linear_part = gp.LinExpr()
+                for i in range(n):
+                    linear_part += mu[i] * w[i]
+
+                quad_part = gp.QuadExpr()
+                for i in range(n):
+                    for j in range(n):
+                        if Sigma[i, j] != 0:
+                            quad_part += Sigma[i, j] * w[i] * w[j]
+
+                model.setObjective(linear_part - 0.5 * gamma * quad_part, gp.GRB.MAXIMIZE)
+
+                model.addConstr(gp.quicksum(w[i] for i in range(n)) == 1, name="budget")
 
                 """
                 TODO: Complete Task 3 Above
