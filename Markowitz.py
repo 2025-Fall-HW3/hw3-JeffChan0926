@@ -118,19 +118,16 @@ class RiskParityPortfolio:
         TODO: Complete Task 2 Below
         """
         # 1. 全期間都用同一組波動率 (No rolling)
-        vol = df_returns[assets].std()      # Series
+        vol = df_returns[assets].std()
 
-        # 2. inverse volatility
+        # 2. inverse vol
         inv_vol = 1.0 / vol
 
-        # 3. normalize → sum = 1
-        weights = inv_vol / inv_vol.sum()  # Series
+        # 3. normalize → 得到 11 個 sector 的固定權重
+        weights = inv_vol / inv_vol.sum()
 
-        # 4. 將同一組權重複製到整個時間序列
-        for col in assets:
-            self.portfolio_weights[col] = weights[col]
-
-        # 5. SPY 權重永遠 0
+        # 4. 把一樣的權重填滿整個時間
+        self.portfolio_weights[assets] = weights
         self.portfolio_weights[self.exclude] = 0
 
 
@@ -292,7 +289,7 @@ if __name__ == "__main__":
         help="Allocation for asset",
     )
 
-    parser.add_argument(
+    parser.add_argument(    
         "--performance",
         action="append",
         help="Performance for portfolio",
